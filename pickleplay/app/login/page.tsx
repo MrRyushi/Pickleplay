@@ -28,6 +28,7 @@ const Login = () => {
       }
 
       const data = await response.json();
+      localStorage.setItem("token", data.token);
       alert(`Login successful! Welcome, ${data.name}`);
       console.log("User info:", data);
       router.push("/landing");

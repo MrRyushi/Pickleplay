@@ -3,21 +3,22 @@
 import DateButtons from "@/components/DateButtons";
 import { DatePicker } from "@/components/DatePicker";
 import TimeSlots from "@/components/TimeSlots";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 
-const Booking = ({params} : {params: {courtId: string}}) => {
-  const courtId = params.courtId;
+const Booking = () => {
+  const searchParams = useSearchParams();
+  const courtId = searchParams.get("courtId");
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [baseDate, setBaseDate] = useState(new Date()); 
   const [selectedSlots, setSelectedSlots] = useState<number[]>([]);
 
   const pad = (n: number) => n.toString().padStart(2, "0");
-
   const formatLocalDateTime = (date: Date) => {
     return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}:00`;
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (selectedSlots.length === 0) {
       alert("Please select at least one time slot.");
       return;
@@ -31,23 +32,38 @@ const Booking = ({params} : {params: {courtId: string}}) => {
     const end = new Date(selectedDate);
     end.setHours(sortedSlots[sortedSlots.length - 1] + 1, 0, 0, 0);
 
-    alert(`Booking from ${formatLocalDateTime(start)} to ${formatLocalDateTime(end)}`);
+    alert(`courtId: ${courtId}`);
 
-    try {
-      fetch("http://localhost:8080/bookings", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          start: formatLocalDateTime(start),
-          end: formatLocalDateTime(end),
-          courtId: courtId, // hardcoded for now,
-          userId: 1, // hardcoded for now
-        })
-      })
-    } catch (error) {
-      console.error("Error submitting booking:", error);
-      alert("Failed to submit booking. Please try again.");
+    const token = localStorage.getItem("token");
+    if (!token) {
+      alert("Not logged in (missing token).");
+      return;
     }
+
+    const res = await fetch("http://localhost:8080/bookings", {
+      method: "POST",
+      headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem("token")}`
+        },
+      body: JSON.stringify({
+        startTime: formatLocalDateTime(start),
+        endTime: formatLocalDateTime(end),
+        status: "PENDING",
+        courtId: Number(courtId), 
+      })
+    })
+
+
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(`Booking failed: ${res.status} ${text}`);
+    }
+
+    const data = await res.json();
+    console.log("Booking created:", data);
+    alert("Booking created!");
+
   };
 
   return (
