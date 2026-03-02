@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ModeToggle } from "@/components/ModeToggle";
+import { Toaster } from "@/components/ui/sonner"
 
 export const metadata: Metadata = {
   title: "Pickleplay",
@@ -27,6 +28,7 @@ export default function RootLayout({
           </div>
           {children}
         </ThemeProvider>
+        <Toaster />
       </body>
     </html>
   );

@@ -1,6 +1,7 @@
 "use client";
 import { useRouter } from "next/dist/client/components/navigation";
 import React, { useState } from "react";
+import { toast } from "sonner"
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -23,19 +24,19 @@ const Login = () => {
 
       if (!response.ok) {
         const errorData = await response.json();
-        alert("Login failed: " + (errorData.message || "Invalid credentials"));
+        toast.error("Login failed: " + (errorData.message || "Invalid credentials"), { position: "top-center" });
         return;
       }
 
       const data = await response.json();
       localStorage.setItem("token", data.token);
-      alert(`Login successful! Welcome, ${data.name}`);
+      toast.success(`Login successful! Welcome, ${data.name}`, { position: "top-center" });
       console.log("User info:", data);
       router.push("/landing");
 
     } catch (error) {
       console.error("Login error:", error);
-      alert("Login failed: Network error or server is down.");
+      toast.error("Login failed: Network error or server is down.", { position: "top-center" });
     }
   };
 

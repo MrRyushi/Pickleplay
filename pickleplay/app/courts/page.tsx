@@ -1,4 +1,5 @@
 "use client";
+import { SkeletonCard } from "@/components/SkeletonCard";
 import { useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
 
@@ -15,7 +16,8 @@ const Courts = () => {
   const [filteredCourts, setFilteredCourts] = useState<Court[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const router = useRouter();
-  
+  const [loading, setLoading] = useState(true);
+
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) return;
@@ -34,7 +36,8 @@ const Courts = () => {
         return res.json();
       })
       .then((data) => setCourts(data))
-      .catch((err) => console.error("Error fetching courts:", err));
+      .catch((err) => console.error("Error fetching courts:", err))
+      .finally(() => setLoading(false));
   }, []);
 
   useEffect(() => {
@@ -64,19 +67,23 @@ const Courts = () => {
           />
         </div>
         <ul className="space-y-2 grid md:grid-cols-2 gap-4">
-          {filteredCourts.map((court) => (
-            <li key={court.id} className="border rounded-md p-4">
-              <h2 className="text-2xl font-semibold">{court.name}</h2>
-              <p className="">{court.location}</p>
-              <p className="font-medium">Hourly Rate: ₱{court.hourly_rate}</p>
-              <button
-                onClick={() => router.push(`/booking?courtId=${court.id}`)}
-                className="mt-2 bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
-              >
-                Check Availability
-              </button>
-            </li>
-          ))}
+          {loading
+            ? Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)
+            : filteredCourts.map((court) => (
+                <li key={court.id} className="border rounded-md p-4">
+                  <h2 className="text-2xl font-semibold">{court.name}</h2>
+                  <p>{court.location}</p>
+                  <p className="font-medium">
+                    Hourly Rate: ₱{court.hourly_rate}
+                  </p>
+                  <button
+                    onClick={() => router.push(`/booking?courtId=${court.id}`)}
+                    className="mt-2 bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
+                  >
+                    Check Availability
+                  </button>
+                </li>
+              ))}
         </ul>
 
         <div>

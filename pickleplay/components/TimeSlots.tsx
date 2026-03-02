@@ -1,7 +1,17 @@
 "use client";
 import React, { useEffect } from "react";
 
-const TimeSlots = ({ selectedDate, selectedSlots, setSelectedSlots }: { selectedDate: Date; selectedSlots: number[]; setSelectedSlots: (slots: number[]) => void }) => {
+const TimeSlots = ({
+  selectedDate,
+  selectedSlots,
+  setSelectedSlots,
+  blockedHours,
+}: {
+  selectedDate: Date;
+  selectedSlots: number[];
+  setSelectedSlots: (slots: number[]) => void;
+  blockedHours: Set<number>;
+}) => {
   const times = Array.from({ length: 18 }, (_, i) => 6 + i); // 6AM → 11PM
 
   useEffect(() => {
@@ -9,6 +19,8 @@ const TimeSlots = ({ selectedDate, selectedSlots, setSelectedSlots }: { selected
   }, [selectedDate, setSelectedSlots]);
 
   const toggleSlot = (hour: number) => {
+    if (blockedHours.has(hour)) return;
+
     if (selectedSlots.length === 0) {
       // Start a new range
       setSelectedSlots([hour]);
@@ -17,6 +29,16 @@ const TimeSlots = ({ selectedDate, selectedSlots, setSelectedSlots }: { selected
 
     const min = Math.min(...selectedSlots);
     const max = Math.max(...selectedSlots);
+
+    const rangeHasBlocked = (from: number, to: number) => {
+      const step = from <= to ? 1 : -1;
+      for (let h = from; h !== to; h += step) {
+        // skip the already-selected boundary hour, check the in-between hours + destination separately
+        if (h !== from && blockedHours.has(h)) return true;
+      }
+      // also check destination hour (already checked at top, but safe)
+      return blockedHours.has(to);
+    };
 
     if (hour < min - 1 || hour > max + 1) {
       // Not contiguous, ignore
@@ -52,12 +74,17 @@ const TimeSlots = ({ selectedDate, selectedSlots, setSelectedSlots }: { selected
         return (
           <button
             key={hour}
+            disabled={blockedHours.has(hour)}
             onClick={() => toggleSlot(hour)}
-            className={`py-3 rounded-md transition ${
-              isSelected
-                ? "bg-green-600 text-white"
-                : "bg-gray-200 hover:bg-green-500 hover:text-white text-black"
-            }`}
+            className={`py-3 rounded-md transition
+      ${
+        blockedHours.has(hour)
+          ? "bg-red-400 text-white cursor-not-allowed pointer-events-none"
+          : isSelected
+            ? "bg-green-600 text-white"
+            : "bg-gray-200 hover:bg-green-500 hover:text-white text-black"
+      }
+    `}
           >
             {formatHour(hour)}
           </button>
